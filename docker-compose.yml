@@ -1,0 +1,38 @@
+version: "3.9"
+
+volumes:
+  db-data:
+
+services:
+  sensor-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - db
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_DB=sensor_db
+      - POSTGRES_PORT=5432
+      - POSTGRES_HOST=db
+    ports:
+      - "8001:8001"
+
+  db:
+    container_name: db
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_DB=sensor_db
+    ports:
+      - "5432:5432"
+    restart: on-failure
+    volumes:
+      - ./db-data:/var/lib/postgresql/data
+
+
+
+
+

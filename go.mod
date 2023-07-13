@@ -13,6 +13,7 @@ require (
 	github.com/ilyakaznacheev/cleanenv v1.4.2
 	github.com/jackc/pgx/v5 v5.3.1
 	github.com/jmoiron/sqlx v1.3.5
+	github.com/sirupsen/logrus v1.9.2
 	github.com/swaggo/swag v1.8.7
 )
 

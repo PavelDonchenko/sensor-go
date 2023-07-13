@@ -1,25 +1,24 @@
-FROM golang:1.17-alpine AS builder
-
-LABEL maintainer="Vic Shóstak <vic@shostak.dev> (https://shostak.dev/)"
-
-# Move to working directory (/build).
-WORKDIR /build
-
-# Copy and download dependency using go mod.
-COPY go.mod go.sum ./
+# Step 1: Modules caching
+FROM golang:1.20-alpine as modules
+COPY go.mod go.sum /modules/
+WORKDIR /modules
 RUN go mod download
 
-# Copy the code into the container.
-COPY . .
+# Step 2: Builder
+FROM golang:1.20-alpine as builder
+COPY --from=modules /go/pkg /go/pkg
+COPY . /app
+WORKDIR /app
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+    go build -o /bin/sensor ./cmd/sensor
 
-# Set necessary environment variables needed for our image and build the API server.
-ENV CGO_ENABLED=0 GOOS=linux GOARCH=amd64
-RUN go build -ldflags="-s -w" -o apiserver .
+# Step 3: Final
+FROM alpine:latest
+RUN apk --no-cache add ca-certificates
 
-FROM scratch
+EXPOSE 5000
 
-# Copy binary and config files from /build to root folder of scratch container.
-COPY --from=builder ["/build/apiserver", "/build/.env", "/"]
-
-# Command to run when starting the container.
-ENTRYPOINT ["/apiserver"]
+# GOPATH for scratch images is /
+COPY --from=builder /app/config.yaml /
+COPY --from=builder /bin/sensor /sensor
+CMD ["/sensor"]

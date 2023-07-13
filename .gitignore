@@ -8,6 +8,8 @@ tmp/
 # Test
 *.out
 
+/db-data
+
 # Environment variables
 .env
 config.yaml

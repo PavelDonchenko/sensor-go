@@ -22,6 +22,9 @@ type Config struct {
 		Database    string `env-default:"coa" env-required:"true" yaml:"database" env:"DB_DATABASE"`
 		MaxAttempts int    `env-default:"5" env-required:"true" yaml:"attempts" env:"ATTEMPTS"`
 	} `yaml:"postgresql"`
+	GroupNames         string `env-default:"Alpha, Beta, Gamma" env-required:"true" yaml:"group_names" env:"GROUP_NAMES"`
+	CountSensorInGroup int    `env-default:"5" env-required:"true" yaml:"sensors_count" env:"SENSORS_COUNT"`
+	SensorGenerated    bool   `env-default:"false" yaml:"sensors_generated" env:"SENSORS_GENERATED"`
 }
 
 func GetConfig() *Config {

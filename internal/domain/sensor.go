@@ -1,17 +1,21 @@
 package domain
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type Sensor struct {
-	ID              int          `json:"id"`
-	SensorGroupID   int          `json:"sensor_group_id"`
-	DataOutputRate  int          `json:"dataOutput_rate"`
-	Temperature     float64      `json:"temperature"`
-	Transparency    int          `json:"transparency"`
-	LastMeasurement time.Time    `json:"last_measurement"`
-	Codename        Codename     `json:"codename"`
-	Coordinates     Coordinates  `json:"coordinates"`
-	DetectedFish    DetectedFish `json:"detected_fish"`
+	ID             uuid.UUID      `json:"id"`
+	DataOutputRate int            `json:"data_output_rate"`
+	Temperature    float64        `json:"temperature"`
+	Transparency   int            `json:"transparency"`
+	Codename       Codename       `json:"codename"`
+	Coordinates    Coordinates    `json:"coordinates"`
+	DetectedFish   []DetectedFish `json:"detected_fish"`
+	UpdatedAt      time.Time      `json:"updated_at"`
+	CreatedAt      time.Time      `json:"created_at"`
 }
 
 type SensorGroup struct {
@@ -27,9 +31,10 @@ type Coordinates struct {
 }
 
 type DetectedFish struct {
-	SensorID int    `json:"sensor_id"`
-	Name     string `json:"name"`
-	Count    int    `json:"count"`
+	ID       uuid.UUID `json:"id"`
+	SensorID uuid.UUID `json:"sensor_id"`
+	Name     string    `json:"name"`
+	Count    int       `json:"count"`
 }
 
 type Codename struct {

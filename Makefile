@@ -36,50 +36,17 @@ migrate.down:
 migrate.force:
 	migrate -path $(MIGRATIONS_FOLDER) -database "$(DATABASE_URL)" force $(version)
 
-docker.run: docker.network docker.postgres swag docker.fiber docker.redis migrate.up
-
-docker.network:
-	docker network inspect dev-network >/dev/null 2>&1 || \
-	docker network create -d bridge dev-network
-
-docker.fiber.build:
-	docker build -t fiber .
-
-docker.fiber: docker.fiber.build
-	docker run --rm -d \
-		--name cgapp-fiber \
-		--network dev-network \
-		-p 5000:5000 \
-		fiber
-
-docker.postgres:
-	docker run --rm -d \
-		--name cgapp-postgres \
-		--network dev-network \
-		-e POSTGRES_USER=postgres \
-		-e POSTGRES_PASSWORD=password \
-		-e POSTGRES_DB=postgres \
-		-v ${HOME}/dev-postgres/data/:/var/lib/postgresql/data \
-		-p 5432:5432 \
-		postgres
-
-docker.redis:
-	docker run --rm -d \
-		--name cgapp-redis \
-		--network dev-network \
-		-p 6379:6379 \
-		redis
-
-docker.stop: docker.stop.fiber docker.stop.postgres docker.stop.redis
-
-docker.stop.fiber:
-	docker stop cgapp-fiber
-
-docker.stop.postgres:
-	docker stop cgapp-postgres
-
-docker.stop.redis:
-	docker stop cgapp-redis
+compose_up:
+	docker-compose -f docker-compose.yml up --build
 
 swag:
 	swag init
+
+createdb:
+	docker exec -it db createdb --username=root --owner=root sensor_db
+
+dropDB:
+	docker exec -it db dropdb --username=root sensor_db
+
+createDB:
+	docker exec -it db createdb --username=root --owner=root sensor_db

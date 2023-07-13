@@ -5,11 +5,15 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 
 	"github.com/PavelDonchenko/sensor-go/config"
+	"github.com/PavelDonchenko/sensor-go/db"
+	"github.com/PavelDonchenko/sensor-go/internal/storage"
 	"github.com/PavelDonchenko/sensor-go/pkg/logging"
 	"github.com/PavelDonchenko/sensor-go/pkg/postgres"
 	"github.com/PavelDonchenko/sensor-go/pkg/utils"
+	"github.com/PavelDonchenko/sensor-go/workers"
 	"github.com/gofiber/fiber/v2"
 
 	_ "github.com/PavelDonchenko/sensor-go/docs" // load API Docs files (Swagger)
@@ -28,7 +32,6 @@ import (
 // @in header
 // @name Authorization
 func main() {
-	// Define config.
 	cfg := config.GetConfig()
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -36,10 +39,33 @@ func main() {
 
 	logger := logging.GetLogger()
 
-	_, err := postgres.NewClient(ctx, cfg)
+	logger.Info("postgres initializing...")
+	pool, err := postgres.NewClient(ctx, cfg)
 	if err != nil {
-		logger.Panic("error open postgres connection")
+		logger.Panic("error open postgres connection", err)
 	}
+
+	err = postgres.Migrate(db.Migrations, cfg)
+	if err != nil {
+		logger.Panic(err)
+	}
+
+	sensorStorage := storage.NewDatabase(pool, *cfg, logger)
+
+	// in first running you must generate sensors and sensors group in PostgreSQL. After that need change
+	// field sensor_generated to "true". Count of sensors and sensor_group can be configured in config.yaml
+	if !cfg.SensorGenerated {
+		logger.Info("Starting create new sensor and sensors group...")
+		err = GenerateSensors(ctx, *sensorStorage)
+		if err != nil {
+			logger.Panic(err)
+		}
+	}
+
+	worker := workers.NewWorker(ctx, sensorStorage, logger, *cfg)
+
+	logger.Info("Starting generate data for sensors...")
+	go worker.Process()
 
 	// Define a new Fiber app with config.
 	app := fiber.New(fiber.Config{
@@ -86,4 +112,21 @@ func StartServerWithGracefulShutdown(a *fiber.App, cfg config.Config) {
 	}
 
 	<-idleConnsClosed
+}
+
+func GenerateSensors(ctx context.Context, db storage.Database) error {
+	groupNames := strings.Split(db.Cfg.GroupNames, " ")
+
+	for i, name := range groupNames {
+		err := db.CreateSensorGroup(ctx, name, i)
+		if err != nil {
+			return err
+		}
+	}
+
+	err := db.CreateSensorsForGroup(ctx, groupNames, db.Cfg.CountSensorInGroup)
+	if err != nil {
+		return err
+	}
+	return nil
 }
