@@ -1,226 +1,31 @@
 basePath: /api
 definitions:
-  models.Book:
+  domain.ResponseDetectedFish:
     properties:
-      author:
-        maxLength: 255
-        type: string
-      book_attrs:
-        $ref: '#/definitions/models.BookAttrs'
-      book_status:
+      count:
         type: integer
-      created_at:
+      name:
         type: string
-      id:
-        type: string
-      title:
-        maxLength: 255
-        type: string
-      updated_at:
-        type: string
-      user_id:
-        type: string
-    required:
-    - author
-    - book_attrs
-    - book_status
-    - id
-    - title
-    - user_id
-    type: object
-  models.BookAttrs:
-    properties:
-      description:
-        type: string
-      picture:
-        type: string
-      rating:
-        maximum: 10
-        minimum: 1
-        type: integer
-    type: object
-  models.User:
-    properties:
-      created_at:
-        type: string
-      email:
-        maxLength: 255
-        type: string
-      id:
-        type: string
-      password_hash:
-        maxLength: 255
-        type: string
-      updated_at:
-        type: string
-      user_role:
-        maxLength: 25
-        type: string
-      user_status:
-        type: integer
-    required:
-    - email
-    - id
-    - password_hash
-    - user_role
-    - user_status
     type: object
 info:
   contact:
-    email: your@mail.com
-    name: API Support
-  description: This is an auto-generated API Docs.
-  license:
-    name: Apache 2.0
-    url: http://www.apache.org/licenses/LICENSE-2.0.html
-  termsOfService: http://swagger.io/terms/
-  title: API
+    email: przmld033@gmail.com
+  description: TEST API.
+  title: SENSOR API
   version: "1.0"
 paths:
-  /v1/book:
-    delete:
-      consumes:
-      - application/json
-      description: Delete book by given ID.
-      parameters:
-      - description: Book ID
-        in: body
-        name: id
-        required: true
-        schema:
-          type: string
-      produces:
-      - application/json
-      responses:
-        "204":
-          description: ok
-          schema:
-            type: string
-      security:
-      - ApiKeyAuth: []
-      summary: delete book by given ID
-      tags:
-      - Book
-    post:
-      consumes:
-      - application/json
-      description: Create a new book.
-      parameters:
-      - description: Title
-        in: body
-        name: title
-        required: true
-        schema:
-          type: string
-      - description: Author
-        in: body
-        name: author
-        required: true
-        schema:
-          type: string
-      - description: User ID
-        in: body
-        name: user_id
-        required: true
-        schema:
-          type: string
-      - description: Book attributes
-        in: body
-        name: book_attrs
-        required: true
-        schema:
-          $ref: '#/definitions/models.BookAttrs'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.Book'
-      security:
-      - ApiKeyAuth: []
-      summary: create a new book
-      tags:
-      - Book
-    put:
-      consumes:
-      - application/json
-      description: Update book.
-      parameters:
-      - description: Book ID
-        in: body
-        name: id
-        required: true
-        schema:
-          type: string
-      - description: Title
-        in: body
-        name: title
-        required: true
-        schema:
-          type: string
-      - description: Author
-        in: body
-        name: author
-        required: true
-        schema:
-          type: string
-      - description: User ID
-        in: body
-        name: user_id
-        required: true
-        schema:
-          type: string
-      - description: Book status
-        in: body
-        name: book_status
-        required: true
-        schema:
-          type: integer
-      - description: Book attributes
-        in: body
-        name: book_attrs
-        required: true
-        schema:
-          $ref: '#/definitions/models.BookAttrs'
-      produces:
-      - application/json
-      responses:
-        "202":
-          description: ok
-          schema:
-            type: string
-      security:
-      - ApiKeyAuth: []
-      summary: update book
-      tags:
-      - Book
-  /v1/book/{id}:
+  /api/v1/group/{groupName}/species:
     get:
       consumes:
       - application/json
-      description: Get book by given ID.
+      description: Retrieves the current detected fish species for a sensor group
+        based on the provided group name.
       parameters:
-      - description: Book ID
+      - description: Name of the sensor group
         in: path
-        name: id
+        name: groupName
         required: true
         type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.Book'
-      summary: get book by given ID
-      tags:
-      - Book
-  /v1/books:
-    get:
-      consumes:
-      - application/json
-      description: Get all exists books.
       produces:
       - application/json
       responses:
@@ -228,117 +33,110 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/models.Book'
+              $ref: '#/definitions/domain.ResponseDetectedFish'
             type: array
-      summary: get all exists books
-      tags:
-      - Books
-  /v1/token/renew:
-    post:
-      consumes:
-      - application/json
-      description: Renew access and refresh tokens.
-      parameters:
-      - description: Refresh token
-        in: body
-        name: refresh_token
-        required: true
-        schema:
-          type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: ok
+        "500":
+          description: Internal Server Error
           schema:
             type: string
-      security:
-      - ApiKeyAuth: []
-      summary: renew access and refresh tokens
+      summary: Get current detected fish species for a sensor group
       tags:
-      - Token
-  /v1/user/sign/in:
-    post:
+      - sensors
+  /api/v1/group/{groupName}/species/top/{top}:
+    get:
       consumes:
       - application/json
-      description: Auth user and return access and refresh token.
+      description: Retrieves the current top detected fish species for a sensor group
+        based on the provided group name and other optional parameters.
       parameters:
-      - description: User Email
-        in: body
-        name: email
+      - description: Name of the sensor group
+        in: path
+        name: groupName
         required: true
-        schema:
-          type: string
-      - description: User Password
-        in: body
-        name: password
+        type: string
+      - description: Number of top species to retrieve
+        in: query
+        name: top
         required: true
-        schema:
-          type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: ok
-          schema:
-            type: string
-      summary: auth user and return access and refresh token
-      tags:
-      - User
-  /v1/user/sign/out:
-    post:
-      consumes:
-      - application/json
-      description: De-authorize user and delete refresh token from Redis.
-      produces:
-      - application/json
-      responses:
-        "204":
-          description: ok
-          schema:
-            type: string
-      security:
-      - ApiKeyAuth: []
-      summary: de-authorize user and delete refresh token from Redis
-      tags:
-      - User
-  /v1/user/sign/up:
-    post:
-      consumes:
-      - application/json
-      description: Create a new user.
-      parameters:
-      - description: Email
-        in: body
-        name: email
-        required: true
-        schema:
-          type: string
-      - description: Password
-        in: body
-        name: password
-        required: true
-        schema:
-          type: string
-      - description: User role
-        in: body
-        name: user_role
-        required: true
-        schema:
-          type: string
+        type: integer
+      - description: Start date for the period (UNIX timestamp)
+        in: query
+        name: from
+        type: string
+      - description: End date for the period (UNIX timestamp)
+        in: query
+        name: till
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.User'
-      summary: create a new user
+            items:
+              $ref: '#/definitions/domain.ResponseDetectedFish'
+            type: array
+        "422":
+          description: Unprocessable Entity
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get current top detected fish species for a sensor group
       tags:
-      - User
-securityDefinitions:
-  ApiKeyAuth:
-    in: header
-    name: Authorization
-    type: apiKey
+      - sensors
+  /api/v1/group/{groupName}/temperature/average:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the temperature in Celsius for a sensor group based on
+        the provided group name.
+      parameters:
+      - description: Name of the sensor group
+        in: path
+        name: groupName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: temperature
+          schema:
+            type: number
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get temperature in Celsius for a sensor group
+      tags:
+      - sensors
+  /api/v1/group/{groupName}/transparency/average:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the transparency percentage for a sensor group based
+        on the provided group name.
+      parameters:
+      - description: Name of the sensor group
+        in: path
+        name: groupName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: transparency
+          schema:
+            type: number
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get transparency percentage for a sensor group
+      tags:
+      - sensors
 swagger: "2.0"

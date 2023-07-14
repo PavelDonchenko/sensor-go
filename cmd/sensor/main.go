@@ -2,10 +2,10 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
-	"strings"
 
 	"github.com/PavelDonchenko/sensor-go/config"
 	"github.com/PavelDonchenko/sensor-go/db"
@@ -54,11 +54,15 @@ func main() {
 
 	sensorStorage := storage.NewDatabase(pool, *cfg, logger)
 
-	// in first running you must generate sensors and sensors group in PostgreSQL. After that need change
-	// field sensor_generated to "true". Count of sensors and sensor_group can be configured in config.yaml
-	if !cfg.SensorGenerated {
+	// in first running you must generate sensors and sensors group in PostgreSQL.
+	sensors, err := sensorStorage.GetAllSensors(ctx)
+	if err != nil {
+		logger.Panic(err)
+	}
+
+	if len(sensors) == 0 {
 		logger.Info("Starting create new sensor and sensors group...")
-		err = GenerateSensors(ctx, *sensorStorage)
+		err = utils.GenerateSensors(ctx, *sensorStorage)
 		if err != nil {
 			logger.Panic("maybe need change config.yaml sensor_generated to true", err)
 		}
@@ -77,6 +81,8 @@ func main() {
 	sensorService := service.NewService(ctx, sensorStorage, logger, *cfg, redis)
 
 	routes.SensorRoute(app, sensorService)
+	routes.SwaggerRoute(app)
+
 	// Start server with graceful shutdown.
 	StartServerWithGracefulShutdown(app, *cfg)
 }
@@ -100,29 +106,9 @@ func StartServerWithGracefulShutdown(a *fiber.App, cfg config.Config) {
 		close(idleConnsClosed)
 	}()
 
-	// Build Fiber connection URL.
-	fiberConnURL, _ := utils.ConnectionURLBuilder("fiber", cfg)
-
-	if err := a.Listen(fiberConnURL); err != nil {
+	if err := a.Listen(fmt.Sprintf(":%s", cfg.HTTP.Port)); err != nil {
 		log.Printf("Oops... Server is not running! Reason: %v", err)
 	}
 
 	<-idleConnsClosed
-}
-
-func GenerateSensors(ctx context.Context, db storage.Database) error {
-	groupNames := strings.Split(db.Cfg.GroupNames, " ")
-
-	for i, name := range groupNames {
-		err := db.CreateSensorGroup(ctx, name, i)
-		if err != nil {
-			return err
-		}
-	}
-
-	err := db.CreateSensorsForGroup(ctx, groupNames, db.Cfg.CountSensorInGroup)
-	if err != nil {
-		return err
-	}
-	return nil
 }

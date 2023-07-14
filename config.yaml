@@ -1,0 +1,22 @@
+postgresql:
+  host: "db"
+  port: "5432"
+  username: "root"
+  password: "secret"
+  database: "sensor_db"
+  attempts: 5
+
+http:
+  ip: "localhost"
+  port: "5000"
+  read_timeout: 60s
+
+group_names: "alpha betta gamma delta epsilon"
+sensors_count: 5
+
+redis:
+  address: "redis:6379"
+  password: "redis-secret"
+  expiration: 10
+
+

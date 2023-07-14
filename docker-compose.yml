@@ -18,7 +18,7 @@ services:
       - POSTGRES_PORT=5432
       - POSTGRES_HOST=db
     ports:
-      - "8001:8001"
+      - "5000:5000"
 
   db:
     container_name: db

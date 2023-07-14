@@ -12,6 +12,17 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+// GetTransparency retrieves the transparency percentage for a sensor group.
+//
+// @Summary Get transparency percentage for a sensor group
+// @Description Retrieves the transparency percentage for a sensor group based on the provided group name.
+// @Tags sensors
+// @Accept json
+// @Produce json
+// @Param groupName path string true "Name of the sensor group"
+// @Success 200 {number} number "transparency"
+// @Failure 500 {string} string
+// @Router /api/v1/group/{groupName}/transparency/average [get]
 func GetTransparency(service service.SensorService) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		groupName := c.Params("groupName")
@@ -23,6 +34,7 @@ func GetTransparency(service service.SensorService) fiber.Handler {
 				"msg":   err.Error(),
 			})
 		}
+
 		return c.JSON(fiber.Map{
 			"error":          false,
 			"msg":            nil,
@@ -31,6 +43,17 @@ func GetTransparency(service service.SensorService) fiber.Handler {
 	}
 }
 
+// GetTemperature retrieves the temperature in Celsius for a sensor group.
+//
+// @Summary Get temperature in Celsius for a sensor group
+// @Description Retrieves the temperature in Celsius for a sensor group based on the provided group name.
+// @Tags sensors
+// @Accept json
+// @Produce json
+// @Param groupName path string true "Name of the sensor group"
+// @Success 200 {number} number "temperature"
+// @Failure 500 {string} string
+// @Router /api/v1/group/{groupName}/temperature/average [get]
 func GetTemperature(service service.SensorService) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		groupName := c.Params("groupName")
@@ -51,6 +74,17 @@ func GetTemperature(service service.SensorService) fiber.Handler {
 	}
 }
 
+// GetCurrentSpecies retrieves the current detected fish species for a sensor group.
+//
+// @Summary Get current detected fish species for a sensor group
+// @Description Retrieves the current detected fish species for a sensor group based on the provided group name.
+// @Tags sensors
+// @Accept json
+// @Produce json
+// @Param groupName path string true "Name of the sensor group"
+// @Success 200 {array} domain.ResponseDetectedFish
+// @Failure 500 {string} string
+// @Router /api/v1/group/{groupName}/species [get]
 func GetCurrentSpecies(service service.SensorService) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		groupName := c.Params("groupName")
@@ -82,6 +116,21 @@ func GetCurrentSpecies(service service.SensorService) fiber.Handler {
 	}
 }
 
+// GetCurrentTopSpecies retrieves the current top detected fish species for a sensor group.
+//
+// @Summary Get current top detected fish species for a sensor group
+// @Description Retrieves the current top detected fish species for a sensor group based on the provided group name and other optional parameters.
+// @Tags sensors
+// @Accept json
+// @Produce json
+// @Param groupName path string true "Name of the sensor group"
+// @Param top query integer true "Number of top species to retrieve"
+// @Param from query string false "Start date for the period (UNIX timestamp)"
+// @Param till query string false "End date for the period (UNIX timestamp)"
+// @Success 200 {array} domain.ResponseDetectedFish
+// @Failure 422 {string} string
+// @Failure 500 {string} string
+// @Router /api/v1/group/{groupName}/species/top/{top} [get]
 func GetCurrentTopSpecies(service service.SensorService) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		groupName := c.Params("groupName")

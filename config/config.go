@@ -29,7 +29,6 @@ type Config struct {
 	} `yaml:"redis"`
 	GroupNames         string `env-default:"Alpha, Beta, Gamma" env-required:"true" yaml:"group_names" env:"GROUP_NAMES"`
 	CountSensorInGroup int    `env-default:"5" env-required:"true" yaml:"sensors_count" env:"SENSORS_COUNT"`
-	SensorGenerated    bool   `env-default:"false" yaml:"sensors_generated" env:"SENSORS_GENERATED"`
 }
 
 func GetConfig() *Config {
