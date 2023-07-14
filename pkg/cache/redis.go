@@ -1,31 +1,80 @@
-package pkg
+package cache
 
 import (
-	"os"
-	"strconv"
+	"context"
+	"errors"
+	"fmt"
+	"time"
 
-	"github.com/PavelDonchenko/sensor-go/pkg/utils"
-
+	"github.com/PavelDonchenko/sensor-go/config"
 	"github.com/go-redis/redis/v8"
 )
 
-// RedisConnection func for connect to Redis server.
-func RedisConnection() (*redis.Client, error) {
-	// Define Redis database number.
-	dbNumber, _ := strconv.Atoi(os.Getenv("REDIS_DB_NUMBER"))
+var (
+	ErrorCheckExist = errors.New("error to check if value exist")
+	ErrorSetRedis   = errors.New("error to set value to Redis")
+	ErrorGetRedis   = errors.New("error to get value from Redis")
+)
 
-	// Build Redis connection URL.
-	redisConnURL, err := utils.ConnectionURLBuilder("redis")
+type CacheRedis interface {
+	Set(ctx context.Context, key string, val string) error
+	Get(ctx context.Context, key string) (string, error)
+	IfExistsInCache(ctx context.Context, key string) (bool, error)
+}
+
+type CacheConn struct {
+	client     *redis.Client
+	expiration time.Duration
+}
+
+func NewCacheConn(config config.Config) (*CacheConn, error) {
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: config.Redis.Address,
+		DB:   0,
+	})
+	ctx := context.Background()
+	pong, err := redisClient.Ping(ctx).Result()
 	if err != nil {
-		return nil, err
+		// Sleep for 3 seconds and wait for Redis to initialize
+		time.Sleep(3 * time.Second)
+		err := redisClient.Ping(ctx).Err()
+		if err != nil {
+			return nil, err
+		}
+	}
+	fmt.Println(pong)
+
+	return &CacheConn{
+		client:     redisClient,
+		expiration: time.Duration(config.Redis.Expiration) * time.Second,
+	}, nil
+}
+
+// Set sets a key-value pair
+func (cache *CacheConn) Set(ctx context.Context, key string, val string) error {
+	if err := cache.client.Set(ctx, key, val, cache.expiration).Err(); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Get returns true if the key already exists and set dst to the corresponding value
+func (cache *CacheConn) Get(ctx context.Context, key string) (string, error) {
+	val, err := cache.client.Get(ctx, key).Result()
+	if err != nil {
+		return "", err
 	}
 
-	// Set Redis options.
-	options := &redis.Options{
-		Addr:     redisConnURL,
-		Password: os.Getenv("REDIS_PASSWORD"),
-		DB:       dbNumber,
-	}
+	return val, nil
+}
 
-	return redis.NewClient(options), nil
+func (cache *CacheConn) IfExistsInCache(ctx context.Context, key string) (bool, error) {
+	exist, err := cache.client.Exists(ctx, key).Result()
+	if err != nil {
+		return false, err
+	}
+	if exist != 1 {
+		return false, nil
+	}
+	return true, nil
 }

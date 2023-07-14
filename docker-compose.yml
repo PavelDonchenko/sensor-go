@@ -2,6 +2,7 @@ version: "3.9"
 
 volumes:
   db-data:
+  redis_data:
 
 services:
   sensor-api:
@@ -31,6 +32,14 @@ services:
     restart: on-failure
     volumes:
       - ./db-data:/var/lib/postgresql/data
+
+  redis:
+    image: redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+        - redis_data:/data
 
 
 

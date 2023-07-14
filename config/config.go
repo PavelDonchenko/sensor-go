@@ -22,6 +22,11 @@ type Config struct {
 		Database    string `env-default:"coa" env-required:"true" yaml:"database" env:"DB_DATABASE"`
 		MaxAttempts int    `env-default:"5" env-required:"true" yaml:"attempts" env:"ATTEMPTS"`
 	} `yaml:"postgresql"`
+	Redis struct {
+		Address    string `yaml:"address" env-default:"localhost:6379" env-required:"true" env:"REDIS_ADDRESS"`
+		Password   string `yaml:"password" env-default:"" env-required:"true" env:"REDIS_PASSWORD"`
+		Expiration int    `yaml:"expiration" env-default:"10" env-required:"true" env:"REDIS_EXPIRATION"`
+	} `yaml:"redis"`
 	GroupNames         string `env-default:"Alpha, Beta, Gamma" env-required:"true" yaml:"group_names" env:"GROUP_NAMES"`
 	CountSensorInGroup int    `env-default:"5" env-required:"true" yaml:"sensors_count" env:"SENSORS_COUNT"`
 	SensorGenerated    bool   `env-default:"false" yaml:"sensors_generated" env:"SENSORS_GENERATED"`

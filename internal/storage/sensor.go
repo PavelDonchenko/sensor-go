@@ -9,6 +9,8 @@ import (
 	"github.com/PavelDonchenko/sensor-go/pkg/generations"
 	"github.com/PavelDonchenko/sensor-go/pkg/logging"
 	"github.com/PavelDonchenko/sensor-go/pkg/postgres"
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -16,7 +18,10 @@ type SensorPostgres interface {
 	SaveDetectedFish(ctx context.Context, fish domain.DetectedFish) (*domain.DetectedFish, error)
 	UpdateSensorData(ctx context.Context, sensor domain.Sensor) error
 	GetAllSensors(ctx context.Context) ([]domain.Sensor, error)
-	GetTransparency(ctx context.Context) (float32, error)
+	GetTransparency(ctx context.Context, groupName string) (float64, error)
+	GetTemperature(ctx context.Context, groupName string) (float64, error)
+	GetSpecies(ctx context.Context, groupName string) ([]domain.DetectedFish, error)
+	GetTopSpecies(ctx context.Context, groupName, start, end string, top int) ([]domain.DetectedFish, error)
 }
 
 type Database struct {
@@ -117,9 +122,14 @@ func (d *Database) SaveDetectedFish(ctx context.Context, fish domain.DetectedFis
 }
 
 func (d *Database) UpdateSensorData(ctx context.Context, sensor domain.Sensor) error {
-	sensorQuery := "UPDATE sensor SET transparency = $1, temperature = $2 WHERE id = $3"
+	var fishesID []uuid.UUID
+	for _, fish := range sensor.DetectedFish {
+		fishesID = append(fishesID, fish.ID)
+	}
 
-	_, err := d.DB.Exec(ctx, sensorQuery, sensor.Transparency, sensor.Temperature, sensor.ID)
+	sensorQuery := "UPDATE sensor SET transparency = $1, temperature = $2, fishes = $3 WHERE id = $4"
+
+	_, err := d.DB.Exec(ctx, sensorQuery, sensor.Transparency, sensor.Temperature, fishesID, sensor.ID)
 	if err != nil {
 		err = postgres.ErrExecQuery(err)
 		d.log.Error(err)
@@ -175,12 +185,12 @@ func (d *Database) GetAllSensors(ctx context.Context) ([]domain.Sensor, error) {
 	return sensors, nil
 }
 
-func (d *Database) GetTransparency(ctx context.Context) (float32, error) {
-	query := "SELECT AVG(transparency) from sensor WHERE group_name = 'Delta'"
+func (d *Database) GetTransparency(ctx context.Context, groupName string) (float64, error) {
+	query := "SELECT AVG(transparency) from sensor WHERE group_name = $1"
 
-	var average float32
+	var average float64
 
-	err := d.DB.QueryRow(ctx, query).Scan(&average)
+	err := d.DB.QueryRow(ctx, query, groupName).Scan(&average)
 	if err != nil {
 		err = postgres.ErrScan(err)
 		d.log.Error(err)
@@ -188,4 +198,111 @@ func (d *Database) GetTransparency(ctx context.Context) (float32, error) {
 	}
 
 	return average, nil
+}
+
+func (d *Database) GetTemperature(ctx context.Context, groupName string) (float64, error) {
+	query := "SELECT AVG(temperature) from sensor WHERE group_name = $1"
+
+	var average float64
+
+	err := d.DB.QueryRow(ctx, query, groupName).Scan(&average)
+	if err != nil {
+		err = postgres.ErrScan(err)
+		d.log.Error(err)
+		return 0, err
+	}
+
+	return average, nil
+}
+
+func (d *Database) GetSpecies(ctx context.Context, groupName string) ([]domain.DetectedFish, error) {
+	query := `SELECT df.name, SUM(df.count) AS total_count 
+		 FROM detected_fish df 
+         WHERE df.id IN (
+		 SELECT DISTINCT df.id 
+		 FROM detected_fish df 
+		 JOIN sensor s ON df.id = ANY(s.fishes) AND s.group_name = $1)
+		 GROUP BY df.name`
+
+	var fishes []domain.DetectedFish
+
+	rows, err := d.DB.Query(ctx, query, groupName)
+	if err != nil {
+		err = postgres.ErrDoQuery(err)
+		d.log.Error(err)
+		return nil, err
+	}
+
+	for rows.Next() {
+		var fish domain.DetectedFish
+		err := rows.Scan(
+			&fish.Name,
+			&fish.Count,
+		)
+		if err != nil {
+			err = postgres.ErrScan(err)
+			d.log.Error(err)
+			return nil, err
+		}
+
+		fishes = append(fishes, fish)
+	}
+
+	return fishes, nil
+}
+
+func (d *Database) GetTopSpecies(ctx context.Context, groupName, start, end string, top int) ([]domain.DetectedFish, error) {
+	var query string
+
+	if start == "" {
+		query = `SELECT df.name, SUM(df.count) AS total_count 
+		 FROM detected_fish df 
+         WHERE df.id IN (
+		 SELECT DISTINCT df.id 
+		 FROM detected_fish df 
+		 JOIN sensor s ON df.id = ANY(s.fishes) AND s.group_name = $1)
+		 GROUP BY df.name
+		 ORDER BY total_count DESC
+		 LIMIT $2`
+	} else {
+		query = `SELECT df.name, SUM(df.count) AS total_count  FROM detected_fish as df
+         JOIN sensor s on s.id = df.sensorid
+         WHERE group_name = $1 AND s.created_at between $3 AND $4
+         GROUP BY df.name
+         ORDER BY total_count DESC
+         LIMIT $2`
+	}
+
+	var fishes []domain.DetectedFish
+
+	var err error
+	var rows pgx.Rows
+
+	if start == "" {
+		rows, err = d.DB.Query(ctx, query, groupName, top)
+	} else {
+		rows, err = d.DB.Query(ctx, query, groupName, top, start, end)
+	}
+	if err != nil {
+		err = postgres.ErrDoQuery(err)
+		d.log.Error(err)
+		return nil, err
+	}
+
+	for rows.Next() {
+		var fish domain.DetectedFish
+		err := rows.Scan(
+			&fish.Name,
+			&fish.Count,
+		)
+		if err != nil {
+			err = postgres.ErrScan(err)
+			d.log.Error(err)
+			return nil, err
+		}
+
+		fishes = append(fishes, fish)
+	}
+
+	return fishes, nil
 }

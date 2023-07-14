@@ -9,7 +9,10 @@ import (
 
 	"github.com/PavelDonchenko/sensor-go/config"
 	"github.com/PavelDonchenko/sensor-go/db"
+	"github.com/PavelDonchenko/sensor-go/internal/routes"
+	"github.com/PavelDonchenko/sensor-go/internal/service"
 	"github.com/PavelDonchenko/sensor-go/internal/storage"
+	"github.com/PavelDonchenko/sensor-go/pkg/cache"
 	"github.com/PavelDonchenko/sensor-go/pkg/logging"
 	"github.com/PavelDonchenko/sensor-go/pkg/postgres"
 	"github.com/PavelDonchenko/sensor-go/pkg/utils"
@@ -19,18 +22,11 @@ import (
 	_ "github.com/PavelDonchenko/sensor-go/docs" // load API Docs files (Swagger)
 )
 
-// @title API
+// @title SENSOR API
 // @version 1.0
-// @description This is an auto-generated API Docs.
-// @termsOfService http://swagger.io/terms/
-// @contact.name API Support
-// @contact.email your@mail.com
-// @license.name Apache 2.0
-// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
+// @description TEST API.
+// @contact.email przmld033@gmail.com
 // @BasePath /api
-// @securityDefinitions.apikey ApiKeyAuth
-// @in header
-// @name Authorization
 func main() {
 	cfg := config.GetConfig()
 
@@ -43,6 +39,12 @@ func main() {
 	pool, err := postgres.NewClient(ctx, cfg)
 	if err != nil {
 		logger.Panic("error open postgres connection", err)
+	}
+
+	logger.Info("redis initializing...")
+	redis, err := cache.NewCacheConn(*cfg)
+	if err != nil {
+		logger.Panic(err)
 	}
 
 	err = postgres.Migrate(db.Migrations, cfg)
@@ -58,7 +60,7 @@ func main() {
 		logger.Info("Starting create new sensor and sensors group...")
 		err = GenerateSensors(ctx, *sensorStorage)
 		if err != nil {
-			logger.Panic(err)
+			logger.Panic("maybe need change config.yaml sensor_generated to true", err)
 		}
 	}
 
@@ -72,15 +74,9 @@ func main() {
 		ReadTimeout: cfg.HTTP.ReadTimeOut,
 	})
 
-	//// Middlewares.
-	//middleware.FiberMiddleware(app) // Register Fiber's middleware for app.
-	//
-	//// Routes.
-	//routes.SwaggerRoute(app)  // Register a route for API Docs (Swagger).
-	//routes.PublicRoutes(app)  // Register a public routes for app.
-	//routes.PrivateRoutes(app) // Register a private routes for app.
-	//routes.NotFoundRoute(app) // Register route for 404 Error.
+	sensorService := service.NewService(ctx, sensorStorage, logger, *cfg, redis)
 
+	routes.SensorRoute(app, sensorService)
 	// Start server with graceful shutdown.
 	StartServerWithGracefulShutdown(app, *cfg)
 }

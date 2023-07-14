@@ -31,10 +31,15 @@ type Coordinates struct {
 }
 
 type DetectedFish struct {
-	ID       uuid.UUID `json:"id"`
-	SensorID uuid.UUID `json:"sensor_id"`
+	ID       uuid.UUID `json:"id,omitempty"`
+	SensorID uuid.UUID `json:"sensor_id,omitempty"`
 	Name     string    `json:"name"`
 	Count    int       `json:"count"`
+}
+
+type ResponseDetectedFish struct {
+	Name  string `json:"name"`
+	Count int    `json:"count"`
 }
 
 type Codename struct {
