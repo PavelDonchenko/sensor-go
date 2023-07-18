@@ -9,6 +9,7 @@ tmp/
 *.out
 
 /db-data
+/dbtest-data
 
 # Environment variables
 .env

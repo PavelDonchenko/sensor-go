@@ -46,3 +46,12 @@ type Codename struct {
 	Name          string `json:"name"`
 	SensorGroupID int    `json:"sensor_group_id"`
 }
+
+type Region struct {
+	XMin float64 `yaml:"x_min"`
+	XMax float64 `yaml:"x_max"`
+	YMin float64 `yaml:"y_min"`
+	YMax float64 `yaml:"y_max"`
+	ZMin float64 `yaml:"z_min"`
+	ZMax float64 `yaml:"z_max"`
+}

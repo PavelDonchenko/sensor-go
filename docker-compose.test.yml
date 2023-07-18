@@ -1,0 +1,53 @@
+version: '3.9'
+
+networks:
+  sensor_test:
+    driver: bridge
+volumes:
+  dbtest-data:
+  redis_data:
+
+services:
+  redis:
+    image: redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+#  app_tests:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile.test
+#    environment:
+#      - POSTGRES_USER=root
+#      - POSTGRES_PASSWORD=secret
+#      - POSTGRES_DB=test_sensor
+#      - POSTGRES_PORT=5432
+#      - POSTGRES_HOST=test_db
+#    volumes:
+#      - $PWD:/app
+#    restart: always
+#    depends_on:
+#       - test_redis
+#       - db
+#    networks:
+#      -  sensor_test
+
+  db:
+    container_name: db
+    image: postgres:latest
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_DB=test_sensor
+    ports:
+      - "5432:5432"
+    expose:
+      - "5432"
+    restart: on-failure
+    networks:
+      - sensor_test
+    volumes:
+      - ./dbtest-data:/var/lib/postgresql/data
+

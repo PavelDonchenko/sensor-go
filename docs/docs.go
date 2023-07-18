@@ -28,7 +28,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "sensors"
+                    "group"
                 ],
                 "summary": "Get current detected fish species for a sensor group",
                 "parameters": [
@@ -69,7 +69,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "sensors"
+                    "group"
                 ],
                 "summary": "Get current top detected fish species for a sensor group",
                 "parameters": [
@@ -135,7 +135,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "sensors"
+                    "group"
                 ],
                 "summary": "Get temperature in Celsius for a sensor group",
                 "parameters": [
@@ -173,7 +173,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "sensors"
+                    "group"
                 ],
                 "summary": "Get transparency percentage for a sensor group",
                 "parameters": [
@@ -188,6 +188,202 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": "transparency",
+                        "schema": {
+                            "type": "number"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/region/temperature/max": {
+            "get": {
+                "description": "Retrieves the current maximum temperature with optional parameters.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "region"
+                ],
+                "summary": "Get current maximum temperature according to region.",
+                "parameters": [
+                    {
+                        "type": "number",
+                        "description": "minimum X coordinate",
+                        "name": "xMin",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "number",
+                        "description": "maximum X coordinate",
+                        "name": "xMax",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "number",
+                        "description": "maximum Y coordinate",
+                        "name": "yMax",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "number",
+                        "description": "minimum Y coordinate",
+                        "name": "yMix",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "number",
+                        "description": "minimum Z coordinate",
+                        "name": "zMin",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "number",
+                        "description": "maximum Z coordinate",
+                        "name": "zMax",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "number"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/region/temperature/min": {
+            "get": {
+                "description": "Retrieves the current minimum temperature with optional parameters.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "region"
+                ],
+                "summary": "Get current minimum temperature according to region.",
+                "parameters": [
+                    {
+                        "type": "number",
+                        "description": "minimum X coordinate",
+                        "name": "xMin",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "number",
+                        "description": "maximum X coordinate",
+                        "name": "xMax",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "number",
+                        "description": "maximum Y coordinate",
+                        "name": "yMax",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "number",
+                        "description": "minimum Y coordinate",
+                        "name": "yMix",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "number",
+                        "description": "minimum Z coordinate",
+                        "name": "zMin",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "number",
+                        "description": "maximum Z coordinate",
+                        "name": "zMax",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "number"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/sensor/{codename}/temperature/average": {
+            "get": {
+                "description": "Retrieves the average temperature based on the  optional parameters.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "sensor"
+                ],
+                "summary": "Get average temperature from sensor",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "name of the group and id inside the group",
+                        "name": "codename",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Start date for the period (UNIX timestamp)",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "End date for the period (UNIX timestamp)",
+                        "name": "till",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
                         "schema": {
                             "type": "number"
                         }

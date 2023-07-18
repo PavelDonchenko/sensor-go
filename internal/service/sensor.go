@@ -21,6 +21,8 @@ type SensorService interface {
 	GetTemperature(ctx context.Context, groupName string) (*float64, error)
 	GetCurrentSpecies(ctx context.Context, groupName string) ([]domain.DetectedFish, error)
 	GetCurrentTopSpecies(ctx context.Context, groupName, start, end string, top int) ([]domain.DetectedFish, error)
+	GetRegionTemperature(ctx context.Context, region domain.Region, flag string) (float64, error)
+	GetSensorTemperature(ctx context.Context, inGroupID int, group, start, end string) (*float64, error)
 }
 
 type Service struct {
@@ -36,7 +38,7 @@ func NewService(ctx context.Context, db storage.SensorPostgres, log logging.Logg
 }
 
 func (s *Service) GetTransparency(ctx context.Context, groupName string) (*float64, error) {
-	if !validateGroupName(groupName, s.cfg) {
+	if !s.validateGroupName(groupName) {
 		return nil, ErrorWrongGroupName
 	}
 
@@ -75,7 +77,7 @@ func (s *Service) GetTransparency(ctx context.Context, groupName string) (*float
 }
 
 func (s *Service) GetTemperature(ctx context.Context, groupName string) (*float64, error) {
-	if !validateGroupName(groupName, s.cfg) {
+	if !s.validateGroupName(groupName) {
 		return nil, ErrorWrongGroupName
 	}
 
@@ -114,7 +116,7 @@ func (s *Service) GetTemperature(ctx context.Context, groupName string) (*float6
 }
 
 func (s *Service) GetCurrentSpecies(ctx context.Context, groupName string) ([]domain.DetectedFish, error) {
-	if !validateGroupName(groupName, s.cfg) {
+	if !s.validateGroupName(groupName) {
 		return nil, ErrorWrongGroupName
 	}
 
@@ -127,7 +129,7 @@ func (s *Service) GetCurrentSpecies(ctx context.Context, groupName string) ([]do
 }
 
 func (s *Service) GetCurrentTopSpecies(ctx context.Context, groupName, start, end string, top int) ([]domain.DetectedFish, error) {
-	if !validateGroupName(groupName, s.cfg) {
+	if !s.validateGroupName(groupName) {
 		return nil, ErrorWrongGroupName
 	}
 
@@ -139,9 +141,27 @@ func (s *Service) GetCurrentTopSpecies(ctx context.Context, groupName, start, en
 	return species, nil
 }
 
-func validateGroupName(groupName string, cfg config.Config) bool {
+func (s *Service) GetRegionTemperature(ctx context.Context, region domain.Region, flag string) (float64, error) {
+	temperature, err := s.db.GetRegionTemperature(ctx, region, flag)
+	if err != nil {
+		return 0, err
+	}
+
+	return temperature, nil
+}
+
+func (s *Service) GetSensorTemperature(ctx context.Context, inGroupID int, group, start, end string) (*float64, error) {
+	temperature, err := s.db.GetSensorAverageTemperature(ctx, inGroupID, group, start, end)
+	if err != nil {
+		return nil, err
+	}
+
+	return temperature, nil
+}
+
+func (s *Service) validateGroupName(groupName string) bool {
 	exist := false
-	for _, name := range strings.Split(cfg.GroupNames, " ") {
+	for _, name := range strings.Split(s.cfg.GroupNames, " ") {
 		if groupName == name {
 			exist = true
 		}

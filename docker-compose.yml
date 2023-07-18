@@ -11,6 +11,8 @@ services:
       dockerfile: Dockerfile
     depends_on:
       - db
+      - redis
+    restart: always
     environment:
       - POSTGRES_USER=root
       - POSTGRES_PASSWORD=secret

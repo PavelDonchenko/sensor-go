@@ -32,7 +32,7 @@ func SeedData(db storage.Database) error {
 }
 
 func Truncate(db storage.Database) error {
-	_, err := db.DB.Exec(context.Background(), "TRUNCATE table sensor_group, sensor, detected_fish")
+	_, err := db.DB.Exec(context.Background(), "TRUNCATE table sensor_group, sensor, detected_fish, temperature")
 	if err != nil {
 		return err
 	}

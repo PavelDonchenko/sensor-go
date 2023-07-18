@@ -9,7 +9,7 @@ import (
 
 	"github.com/PavelDonchenko/sensor-go/config"
 	"github.com/PavelDonchenko/sensor-go/db"
-	"github.com/PavelDonchenko/sensor-go/internal/routes"
+	"github.com/PavelDonchenko/sensor-go/internal/handler"
 	"github.com/PavelDonchenko/sensor-go/internal/service"
 	"github.com/PavelDonchenko/sensor-go/internal/storage"
 	"github.com/PavelDonchenko/sensor-go/pkg/cache"
@@ -28,7 +28,7 @@ import (
 // @contact.email przmld033@gmail.com
 // @BasePath /api
 func main() {
-	cfg := config.GetConfig()
+	cfg := config.GetConfig("config.yaml")
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -54,7 +54,8 @@ func main() {
 
 	sensorStorage := storage.NewDatabase(pool, *cfg, logger)
 
-	// in first running you must generate sensors and sensors group in PostgreSQL.
+	// in first running you must generate sensors and sensors group in PostgreSQL. checking if sensors are existing - everything ok,
+	// if not - create them
 	sensors, err := sensorStorage.GetAllSensors(ctx)
 	if err != nil {
 		logger.Panic(err)
@@ -70,6 +71,7 @@ func main() {
 
 	worker := workers.NewWorker(ctx, sensorStorage, logger, *cfg)
 
+	// worker is using to update sensor data
 	logger.Info("Starting generate data for sensors...")
 	go worker.Process()
 
@@ -80,8 +82,10 @@ func main() {
 
 	sensorService := service.NewService(ctx, sensorStorage, logger, *cfg, redis)
 
-	routes.SensorRoute(app, sensorService)
-	routes.SwaggerRoute(app)
+	routes := handler.NewHandler(ctx, *cfg, sensorService)
+
+	routes.Register(app)
+	routes.RegisterSwagger(app)
 
 	// Start server with graceful shutdown.
 	StartServerWithGracefulShutdown(app, *cfg)

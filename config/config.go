@@ -31,12 +31,12 @@ type Config struct {
 	CountSensorInGroup int    `env-default:"5" env-required:"true" yaml:"sensors_count" env:"SENSORS_COUNT"`
 }
 
-func GetConfig() *Config {
+func GetConfig(path string) *Config {
 	log.Print("config init")
 
 	c := &Config{}
 
-	if err := cleanenv.ReadConfig("config.yaml", c); err != nil {
+	if err := cleanenv.ReadConfig(path, c); err != nil {
 		log.Fatalf("error read config: %v", err)
 	}
 

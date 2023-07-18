@@ -2,6 +2,9 @@ package storage
 
 import (
 	"context"
+	"database/sql"
+	"errors"
+	"fmt"
 	"math/rand"
 
 	"github.com/PavelDonchenko/sensor-go/config"
@@ -22,6 +25,9 @@ type SensorPostgres interface {
 	GetTemperature(ctx context.Context, groupName string) (float64, error)
 	GetSpecies(ctx context.Context, groupName string) ([]domain.DetectedFish, error)
 	GetTopSpecies(ctx context.Context, groupName, start, end string, top int) ([]domain.DetectedFish, error)
+	GetRegionTemperature(ctx context.Context, region domain.Region, flag string) (float64, error)
+	SaveTemperature(ctx context.Context, t float64, uuid uuid.UUID) error
+	GetSensorAverageTemperature(ctx context.Context, inGroupID int, group, start, end string) (*float64, error)
 }
 
 type Database struct {
@@ -109,6 +115,18 @@ func (d *Database) CreateSensorsForGroup(ctx context.Context, group []string, se
 	return nil
 }
 
+func (d *Database) SaveTemperature(ctx context.Context, t float64, uuid uuid.UUID) error {
+	query := `INSERT INTO temperature (degrees, sensorid) VALUES ($1, $2)`
+
+	_, err := d.DB.Exec(ctx, query, t, uuid)
+	if err != nil {
+		err = postgres.ErrScan(err)
+		d.log.Error(err)
+		return err
+	}
+	return nil
+}
+
 func (d *Database) SaveDetectedFish(ctx context.Context, fish domain.DetectedFish) (*domain.DetectedFish, error) {
 	var detectedFish domain.DetectedFish
 	query := "INSERT INTO detected_fish (name, count, sensorid) VALUES ($1, $2, $3) RETURNING id, name, count"
@@ -129,11 +147,15 @@ func (d *Database) UpdateSensorData(ctx context.Context, sensor domain.Sensor) e
 
 	sensorQuery := "UPDATE sensor SET transparency = $1, temperature = $2, fishes = $3 WHERE id = $4"
 
-	_, err := d.DB.Exec(ctx, sensorQuery, sensor.Transparency, sensor.Temperature, fishesID, sensor.ID)
+	ct, err := d.DB.Exec(ctx, sensorQuery, sensor.Transparency, sensor.Temperature, fishesID, sensor.ID)
 	if err != nil {
 		err = postgres.ErrExecQuery(err)
 		d.log.Error(err)
 		return err
+	}
+
+	if ct.RowsAffected() == 0 {
+		return errors.New("sensor not found")
 	}
 
 	//for _, fish := range sensor.DetectedFish {
@@ -305,4 +327,48 @@ func (d *Database) GetTopSpecies(ctx context.Context, groupName, start, end stri
 	}
 
 	return fishes, nil
+}
+
+func (d *Database) GetRegionTemperature(ctx context.Context, region domain.Region, flag string) (float64, error) {
+	query := fmt.Sprintf(`SELECT %s(temperature) 
+								 FROM sensor 
+								 WHERE x >= $1 
+								 AND x <= $2 
+								 AND y >= $3 
+								 AND y <= $4 
+								 AND z >= $5 
+								 AND z <= $6`, flag)
+
+	var temperature float64
+	err := d.DB.QueryRow(ctx, query, region.XMin, region.XMax, region.XMin, region.XMax, region.XMin, region.XMax).Scan(&temperature)
+	if err != nil {
+		err = postgres.ErrScan(err)
+		d.log.Error(err)
+		return 0, err
+	}
+
+	return temperature, nil
+}
+
+func (d *Database) GetSensorAverageTemperature(ctx context.Context, inGroupID int, group, start, end string) (*float64, error) {
+	query := `SELECT AVG(degrees)
+			  FROM temperature as t
+              JOIN sensor s ON t.sensorid = s.id
+              WHERE s.group_name = $1
+              AND s.in_group_id = $2
+			  AND t.created_at between $3 AND $4`
+
+	var temperature *float64
+
+	err := d.DB.QueryRow(ctx, query, group, inGroupID, start, end).Scan(&temperature)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		err = postgres.ErrScan(err)
+		d.log.Error(err)
+		return nil, err
+	}
+
+	return temperature, nil
 }

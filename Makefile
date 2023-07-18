@@ -1,4 +1,4 @@
-.PHONY: clean critic security lint test build run
+.PHONY: lint run swag createTestDB dropDB createDBtest int_test test
 
 lint:
 	golangci-lint run ./...
@@ -21,6 +21,7 @@ dropDB:
 createDB:
 	docker exec -it db createdb --username=root --owner=root sensor_db
 
-
-test:
-	go test ./...
+int_test:
+	docker-compose -f docker-compose.test.yml up --build -d
+	go test -v ./...
+	docker-compose -f docker-compose.test.yml down --volumes

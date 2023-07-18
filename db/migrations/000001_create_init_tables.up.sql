@@ -32,5 +32,13 @@ CREATE TABLE detected_fish (
     created_at timestamp NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_fish_name ON detected_fish(name);
+CREATE TABLE temperature (
+    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    degrees double precision NOT NULL,
+    sensorID uuid REFERENCES sensor (id) ON DELETE CASCADE,
+    created_at timestamp NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_fish_id ON detected_fish(id);
+CREATE INDEX idx_sensor_group_name ON sensor(group_name);
 

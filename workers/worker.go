@@ -59,6 +59,11 @@ func (w *Worker) generateSensorData(sensor domain.Sensor) {
 
 			temperature := generations.GenerateTemperature(sensor.Coordinates.Z)
 
+			err = w.DB.SaveTemperature(w.ctx, temperature, sensor.ID)
+			if err != nil {
+				w.errorChan <- err
+			}
+
 			transparency := generations.GenerateTransparency(sensor.Transparency)
 
 			toUpdate := domain.Sensor{

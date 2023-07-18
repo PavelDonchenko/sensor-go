@@ -41,7 +41,7 @@ paths:
             type: string
       summary: Get current detected fish species for a sensor group
       tags:
-      - sensors
+      - group
   /api/v1/group/{groupName}/species/top/{top}:
     get:
       consumes:
@@ -86,7 +86,7 @@ paths:
             type: string
       summary: Get current top detected fish species for a sensor group
       tags:
-      - sensors
+      - group
   /api/v1/group/{groupName}/temperature/average:
     get:
       consumes:
@@ -112,7 +112,7 @@ paths:
             type: string
       summary: Get temperature in Celsius for a sensor group
       tags:
-      - sensors
+      - group
   /api/v1/group/{groupName}/transparency/average:
     get:
       consumes:
@@ -138,5 +138,138 @@ paths:
             type: string
       summary: Get transparency percentage for a sensor group
       tags:
-      - sensors
+      - group
+  /api/v1/region/temperature/max:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the current maximum temperature with optional parameters.
+      parameters:
+      - description: minimum X coordinate
+        in: query
+        name: xMin
+        required: true
+        type: number
+      - description: maximum X coordinate
+        in: query
+        name: xMax
+        required: true
+        type: number
+      - description: maximum Y coordinate
+        in: query
+        name: yMax
+        required: true
+        type: number
+      - description: minimum Y coordinate
+        in: query
+        name: yMix
+        required: true
+        type: number
+      - description: minimum Z coordinate
+        in: query
+        name: zMin
+        required: true
+        type: number
+      - description: maximum Z coordinate
+        in: query
+        name: zMax
+        required: true
+        type: number
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: number
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get current maximum temperature according to region.
+      tags:
+      - region
+  /api/v1/region/temperature/min:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the current minimum temperature with optional parameters.
+      parameters:
+      - description: minimum X coordinate
+        in: query
+        name: xMin
+        required: true
+        type: number
+      - description: maximum X coordinate
+        in: query
+        name: xMax
+        required: true
+        type: number
+      - description: maximum Y coordinate
+        in: query
+        name: yMax
+        required: true
+        type: number
+      - description: minimum Y coordinate
+        in: query
+        name: yMix
+        required: true
+        type: number
+      - description: minimum Z coordinate
+        in: query
+        name: zMin
+        required: true
+        type: number
+      - description: maximum Z coordinate
+        in: query
+        name: zMax
+        required: true
+        type: number
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: number
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get current minimum temperature according to region.
+      tags:
+      - region
+  /api/v1/sensor/{codename}/temperature/average:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the average temperature based on the  optional parameters.
+      parameters:
+      - description: name of the group and id inside the group
+        in: path
+        name: codename
+        required: true
+        type: string
+      - description: Start date for the period (UNIX timestamp)
+        in: query
+        name: from
+        type: string
+      - description: End date for the period (UNIX timestamp)
+        in: query
+        name: till
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: number
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get average temperature from sensor
+      tags:
+      - sensor
 swagger: "2.0"
